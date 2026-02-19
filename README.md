@@ -59,27 +59,5 @@ Returns transcript + metadata.
 
 ## 🧾 Example Response
 
-{
-  "items": [
-    {
-      "foodName": "rice packets",
-      "quantity": "30 packets",
-      "quality": "good"
-    },
-    {
-      "foodName": "pickle packets",
-      "quantity": "30 packets",
-      "quality": "good"
-    },
-    {
-      "foodName": "sambar",
-      "quantity": null,
-      "quality": "bad"
-    },
-    {
-      "foodName": "palya",
-      "quantity": "enough for 20 people",
-      "quality": "bad"
-    }
-  ]
-}
+<img width="739" height="791" alt="image" src="https://github.com/user-attachments/assets/7e4f511e-e9dd-4985-a0fa-3744e1e28e14" />
+
