@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Ignore audio files
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.ogg
