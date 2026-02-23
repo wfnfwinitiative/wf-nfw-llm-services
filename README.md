@@ -27,18 +27,8 @@ An AI-powered FastAPI microservice that converts spoken audio (in any language) 
 
 ## 📁 Project Structure
 
-NoFoodWasteAudioMealAPI
-│
-├── app
-│   ├── main.py
-│   ├── config.py
-│   ├── models.py
-│   └── services
-│       ├── speech_api.py
-│       └── metadata_service.py
-│
-├── .env
-└── requirements.txt
+<img width="358" height="337" alt="image" src="https://github.com/user-attachments/assets/644b7990-c890-4c69-a158-0d40f570a4b1" />
+
 
 ---
 
@@ -69,27 +59,5 @@ Returns transcript + metadata.
 
 ## 🧾 Example Response
 
-{
-  "items": [
-    {
-      "foodName": "rice packets",
-      "quantity": "30 packets",
-      "quality": "good"
-    },
-    {
-      "foodName": "pickle packets",
-      "quantity": "30 packets",
-      "quality": "good"
-    },
-    {
-      "foodName": "sambar",
-      "quantity": null,
-      "quality": "bad"
-    },
-    {
-      "foodName": "palya",
-      "quantity": "enough for 20 people",
-      "quality": "bad"
-    }
-  ]
-}
+<img width="739" height="791" alt="image" src="https://github.com/user-attachments/assets/7e4f511e-e9dd-4985-a0fa-3744e1e28e14" />
+
