@@ -13,21 +13,40 @@ class MetadataExtractionError(Exception):
 
 
 def normalize_unit(quantity: str | None):
+    """
+    Convert any unit to KG.
+    grams → kg
+    ml → kg
+    liter → kg
+    """
     if not quantity:
         return None
 
     q = quantity.lower()
+    #"2 KG" → "2 kg"
 
-    weight_words = ["kg", "kilo", "kilogram", "g", "gram", "grams"]
-    liquid_words = ["liter", "litre", "ml", "milliliter", "millilitre"]
+    try:
+        value = float(q.split()[0]) #Extracts the number from quantity. ["2","kg"]
+    except Exception:
+        return None
 
-    if any(w in q for w in weight_words):
-        return quantity.split()[0] + " kg" if quantity.split() else "kg"
+    
+    if "g" in q or "gram" in q:
+        value = value / 1000
 
-    if any(w in q for w in liquid_words):
-        return quantity.split()[0] + " liter" if quantity.split() else "liter"
+    
+    elif "ml" in q:
+        value = value / 1000
 
-    return quantity
+    
+    elif "liter" in q or "litre" in q:
+        pass
+
+    
+    elif "kg" in q or "kilo" in q:
+        pass
+
+    return f"{round(value,3)} kg" #0.5234234 -> 0.523 kg
 
 
 def build_prompt(transcript: str) -> str:
@@ -37,13 +56,20 @@ You are an information extraction system.
 TASK:
 Extract food purchase details from the transcript.
 
-RULES:
+IMPORTANT RULES:
+- The transcript may be in ANY language.
+- Translate all food names to English.
 - Return ONLY valid JSON.
-- All text must be in English.
-- Quantity unit must be ONLY "kg" or "liter" when present.
-- Convert grams → kg and ml → liter when possible.
-- If no food items exist, return an empty list.
-- Do not hallucinate items.
+- All output text MUST be in English.
+
+QUANTITY RULES:
+- ALL quantities must be returned ONLY in "kg".
+- Convert grams → kg.
+- Convert ml → kg.
+- Convert liter → kg.
+- If conversion is unclear assume 1 liter = 1 kg.
+
+If no food items exist return an empty list.
 
 OUTPUT FORMAT:
 {{
@@ -67,30 +93,39 @@ def extract_metadata(transcript: str) -> FoodMetadata:
 
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
-            response_format={"type": "json_object"},  
+            response_format={"type": "json_object"},
             temperature=0,
             messages=[
-                {"role": "system", "content": "You extract structured food metadata."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You extract structured food metadata from multilingual text."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ],
         )
 
         content = response.choices[0].message.content
         data = json.loads(content)
 
-        # Ensure items key exists
         if not data.get("items"):
             data["items"] = []
 
+        cleaned_items = []
+
         for item in data["items"]:
-            if isinstance(item.get("quantity"), (int, float)):
-                item["quantity"] = str(item["quantity"])
 
-            item["quantity"] = normalize_unit(item.get("quantity"))
+            quantity = normalize_unit(item.get("quantity"))
 
-            item.setdefault("foodName", None)
-            item.setdefault("quantity", None)
-            item.setdefault("quality", None)
+            cleaned_items.append({
+                "foodName": item.get("foodName"),
+                "quantity": quantity,
+                "quality": item.get("quality")
+            })
+
+        data["items"] = cleaned_items
 
         return FoodMetadata(**data)
 
