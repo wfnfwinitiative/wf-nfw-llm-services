@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Query, HTTPException
-import shutil
 import os
+import aiofiles
 from app.services.speech_api import TranscriptionError
 from app.services.speech_factory import transcribe
 from app.services.metadata_service import extract_metadata, MetadataExtractionError
@@ -25,21 +25,22 @@ async def process_audio(
     file_path = f"temp_{file.filename}"
 
     try:
-        # Save file
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        #  Async save file
+        async with aiofiles.open(file_path, "wb") as buffer:
+            content = await file.read()
+            await buffer.write(content)
 
-        # Transcription
-        transcript = transcribe(file_path, mode)
+        # Async transcription
+        transcript = await transcribe(file_path, mode)
 
         if not transcript:
             raise HTTPException(status_code=422, detail="Empty transcript")
 
-        # Metadata extraction
+        #  Async metadata extraction
         try:
-            metadata = extract_metadata(transcript)
+            metadata = await extract_metadata(transcript)
         except MetadataExtractionError:
-            metadata = {"items": []}  # graceful fallback
+            metadata = {"items": []}
 
         return {
             "transcript": transcript,
@@ -49,10 +50,9 @@ async def process_audio(
     except TranscriptionError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=500, detail="Audio processing failed")
 
     finally:
-        # Cleanup temp file
         if os.path.exists(file_path):
             os.remove(file_path)
