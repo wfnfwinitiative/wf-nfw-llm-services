@@ -1,9 +1,9 @@
 from openai import OpenAI
 import asyncio
-from app.config import OPENAI_API_KEY
+from app.core.config import settings
 
 # Initialize OpenAI client using API key from configuration
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 class TranscriptionError(Exception):
@@ -65,7 +65,7 @@ def _call_openai_transcribe(file_path: str):
     """
     with open(file_path, "rb") as audio_file:
         return client.audio.transcriptions.create(
-            model="gpt-4o-transcribe",  # OpenAI speech-to-text model
+            model=settings.SPEECH_TO_TEXT_MODEL,  # OpenAI speech-to-text model
             file=audio_file,
             prompt="Translate the speech to English",  # Ensures output is in English
         )

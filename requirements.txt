@@ -1,9 +1,8 @@
 fastapi
 uvicorn[standard]
-pydantic
-openai-whisper
+openai
 python-multipart
 python-dotenv
-openai
-pydantic
 aiofiles
+pydantic-settings
+openai-whisper

@@ -2,8 +2,8 @@ import json
 import asyncio
 from openai import OpenAI
 from pydantic import ValidationError
-from app.config import OPENAI_API_KEY
 from app.models import FoodMetadata
+from app.core.config import settings
 
 
 class MetadataExtractionError(Exception):
@@ -103,12 +103,12 @@ def _call_openai(prompt: str):
     A new client instance is created per call to ensure thread safety
     when used with asyncio thread pools.
     """
-    client = OpenAI(api_key=OPENAI_API_KEY)
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     return client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model=settings.METADATA_EXTRACTION_MODEL,
         response_format={"type": "json_object"},  # Force valid JSON response
-        temperature=0,  # Deterministic output
+        temperature=settings.MODEL_TEMPERATURE,
         messages=[
             {
                 "role": "system",
