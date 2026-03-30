@@ -49,6 +49,7 @@ async def transcribe_api(file_path: str) -> str:
             await asyncio.sleep(2 ** attempt)
 
         except Exception as e:
+            print(e)
             # Catch all other transcription errors (network, API, etc.)
             if attempt == max_retries - 1:
                 raise TranscriptionError("Audio transcription failed") from e
