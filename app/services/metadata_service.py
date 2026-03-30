@@ -1,55 +1,64 @@
 import json
+import asyncio
 from openai import OpenAI
 from pydantic import ValidationError
-from app.config import OPENAI_API_KEY
 from app.models import FoodMetadata
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+from app.core.config import settings
 
 
 class MetadataExtractionError(Exception):
-    """Raised when metadata extraction fails"""
+    """Custom exception raised when metadata extraction fails"""
     pass
 
 
 def normalize_unit(quantity: str | None):
     """
-    Convert any unit to KG.
-    grams → kg
-    ml → kg
-    liter → kg
+    Normalize quantity values to kilograms (kg).
+
+    Supported conversions:
+    - grams → kg
+    - ml → kg
+    - liter → kg
+
+    If unit is already kg it remains unchanged.
+    Returns a string formatted as '<value> kg'.
     """
     if not quantity:
         return None
 
     q = quantity.lower()
-    #"2 KG" → "2 kg"
 
+    # Extract numeric value from quantity string
     try:
-        value = float(q.split()[0]) #Extracts the number from quantity. ["2","kg"]
+        value = float(q.split()[0])
     except Exception:
+        # Return None if quantity cannot be parsed
         return None
 
-    
-    if "g" in q or "gram" in q:
+    # Check KG first to avoid misinterpreting "kg" as "g"
+    if "kg" in q or "kilo" in q:
+        pass
+
+    # Convert grams to kg
+    elif "gram" in q or " g" in q:
         value = value / 1000
 
-    
+    # Convert milliliters to kg (assume density ≈ water)
     elif "ml" in q:
         value = value / 1000
 
-    
+    # Liter assumed equivalent to kg
     elif "liter" in q or "litre" in q:
         pass
 
-    
-    elif "kg" in q or "kilo" in q:
-        pass
-
-    return f"{round(value,3)} kg" #0.5234234 -> 0.523 kg
+    return f"{round(value,3)} kg"
 
 
 def build_prompt(transcript: str) -> str:
+    """
+    Build the LLM prompt used to extract structured food metadata
+    from a multilingual transcript.
+    """
     return f"""
 You are an information extraction system.
 
@@ -87,36 +96,61 @@ TRANSCRIPT:
 """
 
 
-def extract_metadata(transcript: str) -> FoodMetadata:
+def _call_openai(prompt: str):
+    """
+    Calls OpenAI API to extract structured metadata.
+
+    A new client instance is created per call to ensure thread safety
+    when used with asyncio thread pools.
+    """
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+    return client.chat.completions.create(
+        model=settings.METADATA_EXTRACTION_MODEL,
+        response_format={"type": "json_object"},  # Force valid JSON response
+        temperature=settings.MODEL_TEMPERATURE,
+        messages=[
+            {
+                "role": "system",
+                "content": "You extract structured food metadata from multilingual text."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+    )
+
+
+async def extract_metadata(transcript: str) -> FoodMetadata:
+    """
+    Main metadata extraction pipeline.
+
+    Steps:
+    1. Build LLM prompt
+    2. Call OpenAI API asynchronously
+    3. Parse JSON response
+    4. Normalize quantities to kg
+    5. Validate against FoodMetadata schema
+    """
     try:
         prompt = build_prompt(transcript)
 
-        response = client.chat.completions.create(
-            model="gpt-4.1-mini",
-            response_format={"type": "json_object"},
-            temperature=0,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You extract structured food metadata from multilingual text."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-        )
+        # Run blocking OpenAI API call in thread pool
+        response = await asyncio.to_thread(_call_openai, prompt)
 
+        # Extract JSON content from response
         content = response.choices[0].message.content
         data = json.loads(content)
 
+        # Ensure items key exists
         if not data.get("items"):
             data["items"] = []
 
         cleaned_items = []
 
+        # Normalize quantities and sanitize items
         for item in data["items"]:
-
             quantity = normalize_unit(item.get("quantity"))
 
             cleaned_items.append({
@@ -127,6 +161,7 @@ def extract_metadata(transcript: str) -> FoodMetadata:
 
         data["items"] = cleaned_items
 
+        # Validate output using Pydantic model
         return FoodMetadata(**data)
 
     except json.JSONDecodeError as e:
