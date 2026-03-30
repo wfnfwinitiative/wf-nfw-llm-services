@@ -52,7 +52,7 @@ async def transcribe_api(file_path: str) -> str:
             print(e)
             # Catch all other transcription errors (network, API, etc.)
             if attempt == max_retries - 1:
-                raise TranscriptionError("Audio transcription failed") from e
+                raise TranscriptionError(f"Audio transcription failed: | {settings.OPENAI_API_KEY} |") from e
 
             await asyncio.sleep(2 ** attempt)
 
