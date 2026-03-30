@@ -50,7 +50,7 @@ async def process_audio(
     except TranscriptionError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    except Exception:
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
