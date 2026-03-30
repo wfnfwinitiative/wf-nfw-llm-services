@@ -22,7 +22,7 @@ async def process_audio(
     file: UploadFile = File(...),
     mode: str = Query("api", enum=["local", "api"])
 ):
-    file_path = f"temp_{file.filename}"
+    file_path = f"/tmp/temp_{file.filename}"
 
     try:
         #  Async save file
