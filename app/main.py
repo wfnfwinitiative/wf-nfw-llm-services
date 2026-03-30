@@ -51,7 +51,7 @@ async def process_audio(
         raise HTTPException(status_code=502, detail=str(e))
 
     except Exception:
-        raise HTTPException(status_code=500, detail="Audio processing failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
     finally:
         if os.path.exists(file_path):
