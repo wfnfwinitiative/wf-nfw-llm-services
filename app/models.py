@@ -3,7 +3,7 @@ from typing import List, Optional
 
 class FoodItem(BaseModel):
     foodName: Optional[str] = None
-    quantity: Optional[int] = None
+    quantity: Optional[float] = None
     quality: Optional[str] = None
 
 class FoodMetadata(BaseModel):

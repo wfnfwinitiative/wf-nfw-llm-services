@@ -22,7 +22,7 @@ def normalize_unit(quantity: str | None):
     - liter → kg
 
     If unit is already kg it remains unchanged.
-    Returns a rounded value of food. It will be an integer. Will be deciphered as kg always.
+    Returns a rounded value of food. It will be an floating point number. Will be deciphered as kg always.
     """
     if not quantity:
         return None
@@ -52,7 +52,7 @@ def normalize_unit(quantity: str | None):
     elif "liter" in q or "litre" in q:
         pass
 
-    return ceil(value)
+    return round(value,3)
 
 
 def build_prompt(transcript: str) -> str:
