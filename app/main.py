@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Query, HTTPException
 import os
+import tempfile
 import aiofiles
 from app.services.speech_api import TranscriptionError
 from app.services.speech_factory import transcribe
@@ -22,7 +23,7 @@ async def process_audio(
     file: UploadFile = File(...),
     mode: str = Query("api", enum=["local", "api"])
 ):
-    file_path = f"/tmp/temp_{file.filename}"
+    file_path = os.path.join(tempfile.gettempdir(), f"temp_{file.filename}")
 
     try:
         #  Async save file

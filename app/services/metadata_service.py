@@ -2,6 +2,7 @@ import json
 import asyncio
 from openai import OpenAI
 from pydantic import ValidationError
+from math import ceil
 from app.models import FoodMetadata
 from app.core.config import settings
 
@@ -21,7 +22,7 @@ def normalize_unit(quantity: str | None):
     - liter → kg
 
     If unit is already kg it remains unchanged.
-    Returns a string formatted as '<value> kg'.
+    Returns a rounded value of food. It will be an integer. Will be deciphered as kg always.
     """
     if not quantity:
         return None
@@ -51,7 +52,7 @@ def normalize_unit(quantity: str | None):
     elif "liter" in q or "litre" in q:
         pass
 
-    return f"{round(value,3)} kg"
+    return ceil(value)
 
 
 def build_prompt(transcript: str) -> str:
